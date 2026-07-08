@@ -1,4 +1,3 @@
-//   app/api/activity/route.ts
 import pool from "../../lib/db";
 
 interface ActivityRequest {
@@ -10,7 +9,6 @@ interface ActivityRequest {
   endDate: string;
   maxParticipants: number;
   currentParticipants?: number;
-  participantsEmail: string;
 }
 
 export async function POST(req: Request) {
@@ -25,7 +23,6 @@ export async function POST(req: Request) {
       startDate,
       endDate,
       maxParticipants,
-      participantsEmail,
     } = body;
 
     const currentParticipants = body.currentParticipants || 1;
@@ -39,8 +36,8 @@ export async function POST(req: Request) {
 
     const [result] = await pool.query(
       `INSERT INTO activity 
-      (leaderEmail, title, status, techStack, createdAt, startDate, endDate, maxParticipants, currentParticipants, participantsEmail) 
-      VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?)`,
+      (leaderEmail, title, status, techStack, createdAt, startDate, endDate, maxParticipants, currentParticipants) 
+      VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?)`,
       [
         leaderEmail,
         title,
@@ -50,7 +47,6 @@ export async function POST(req: Request) {
         endDate,
         maxParticipants,
         currentParticipants,
-        participantsEmail,
       ]
     );
 
