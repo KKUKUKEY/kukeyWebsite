@@ -1,3 +1,4 @@
+import { log } from "console";
 import jwt from "jsonwebtoken";
 
 interface UserPayload {

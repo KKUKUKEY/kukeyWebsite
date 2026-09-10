@@ -1,12 +1,19 @@
-import pool from "../../../lib/db";
-import {verifyAccessToken,generateAccessToken} from "../../../utils/jwt";
+import pool from "../../../lib/db_test";
+import { verifyAccessToken, generateAccessToken } from "../../../utils/jwt";
 
 export async function POST(req: Request) {
   try {
     //const authorization = req.headers.get("Authorization");
     const body = await req.json();
     const { email, targetRole } = body;
-    const authorization=generateAccessToken({id:"1",email:"testemail@gmail.com",name:"testname",role:"unapproved"});
+    const authorization =
+      "Bearer " +
+      generateAccessToken({
+        id: "1",
+        email: "test@gmail.com",
+        name: "testname",
+        role: "admin",
+      });
     if (!authorization) {
       return Response.json(
         {
@@ -14,7 +21,7 @@ export async function POST(req: Request) {
           message: "인증 토큰이 없습니다.",
           data: null,
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -27,7 +34,7 @@ export async function POST(req: Request) {
           message: "잘못된 인증 형식입니다.",
           data: null,
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -40,7 +47,7 @@ export async function POST(req: Request) {
           message: "유효하지 않은 인증 토큰입니다.",
           data: null,
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -55,11 +62,14 @@ export async function POST(req: Request) {
           message: "관리자만 회원 정보를 수정할 수 있습니다.",
           data: null,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    await pool.query("UPDATE member SET role = ? WHERE email = ?", [targetRole, email]);
+    await pool.query("UPDATE member SET role = ? WHERE email = ?", [
+      targetRole,
+      email,
+    ]);
 
     return Response.json(
       {
@@ -67,7 +77,7 @@ export async function POST(req: Request) {
         message: "권한 변경 성공",
         data: {
           newRole: targetRole,
-        }
+        },
       },
       { status: 200 },
     );
