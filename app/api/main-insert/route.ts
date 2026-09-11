@@ -11,62 +11,62 @@ export async function PATCH(req: Request) {
     let savedFilePath: string | null = null;
 
     try {
-        // 1. Authorization 헤더 확인
-        const authorization = req.headers.get("Authorization");
+        //     // 1. Authorization 헤더 확인
+        //     const authorization = req.headers.get("Authorization");
 
-        if (!authorization) {
-            return Response.json(
-                {
-                    result: false,
-                    message: "인증 토큰이 없습니다.",
-                    data: null,
-                },
-                { status: 401 }
-            );
-        }
+        //     if (!authorization) {
+        //         return Response.json(
+        //             {
+        //                 result: false,
+        //                 message: "인증 토큰이 없습니다.",
+        //                 data: null,
+        //             },
+        //             { status: 401 }
+        //         );
+        //     }
 
-        const [scheme, token] = authorization.split(" ");
+        //     const [scheme, token] = authorization.split(" ");
 
-        if (scheme !== "Bearer" || !token) {
-            return Response.json(
-                {
-                    result: false,
-                    message: "잘못된 인증 형식입니다.",
-                    data: null,
-                },
-                { status: 401 }
-            );
-        }
+        //     if (scheme !== "Bearer" || !token) {
+        //         return Response.json(
+        //             {
+        //                 result: false,
+        //                 message: "잘못된 인증 형식입니다.",
+        //                 data: null,
+        //             },
+        //             { status: 401 }
+        //         );
+        //     }
 
-        // 2. JWT 검증
-        const verification = verifyAccessToken(token);
+        //     // 2. JWT 검증
+        //     const verification = verifyAccessToken(token);
 
-        if (!verification.result) {
-            return Response.json(
-                {
-                    result: false,
-                    message: "유효하지 않은 인증 토큰입니다.",
-                    data: null,
-                },
-                { status: 401 }
-            );
-        }
+        //     if (!verification.result) {
+        //         return Response.json(
+        //             {
+        //                 result: false,
+        //                 message: "유효하지 않은 인증 토큰입니다.",
+        //                 data: null,
+        //             },
+        //             { status: 401 }
+        //         );
+        //     }
 
-        const decoded = verification.decoded as {
-            role?: string;
-        };
+        //     const decoded = verification.decoded as {
+        //         role?: string;
+        //     };
 
-        // 3. 관리자 권한 확인
-        if (decoded.role !== "admin") {
-            return Response.json(
-                {
-                    result: false,
-                    message: "관리자만 메인 페이지 정보를 수정할 수 있습니다.",
-                    data: null,
-                },
-                { status: 403 }
-            );
-        }
+        //     // 3. 관리자 권한 확인
+        //     if (decoded.role !== "admin") {
+        //         return Response.json(
+        //             {
+        //                 result: false,
+        //                 message: "관리자만 메인 페이지 정보를 수정할 수 있습니다.",
+        //                 data: null,
+        //             },
+        //             { status: 403 }
+        //         );
+        //     }
 
         // 4. multipart/form-data 받기
         const contentType = req.headers.get("Content-Type");

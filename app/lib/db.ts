@@ -21,5 +21,4 @@ const pool: mysql.Pool =
 if (process.env.NODE_ENV !== "production") {
   global.dbPool = pool;
 }
-
 export default pool;
