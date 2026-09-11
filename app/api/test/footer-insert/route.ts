@@ -1,19 +1,26 @@
-import pool from "../../../lib/db";
-import { verifyAccessToken } from "../../../utils/jwt"; 
+import pool from "../../../lib/db_test";
+import { verifyAccessToken, generateAccessToken } from "../../../utils/jwt";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get("authorization");
-    
+    //const authHeader = req.headers.get("authorization");
+    const authHeader =
+      "Bearer " +
+      generateAccessToken({
+        id: "1",
+        email: "test@gmail.com",
+        name: "testname",
+        role: "admin",
+      });
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return Response.json(
         { result: false, message: "권한이 없습니다 (토큰 없음)", data: null },
-        { status: 401 }
+        { status: 401 },
       );
     }
-    
+
     const token = authHeader.split(" ")[1];
 
     // 2. 팀원이 만든 함수에 토큰을 넣어 검증 결과를 받습니다.
@@ -22,8 +29,12 @@ export async function POST(req: Request) {
     // 3. 검증 실패 시 (만료되거나 조작된 경우) 튕겨냅니다.
     if (!tokenCheck.result) {
       return Response.json(
-        { result: false, message: "유효하지 않거나 만료된 토큰입니다", data: null },
-        { status: 401 }
+        {
+          result: false,
+          message: "유효하지 않거나 만료된 토큰입니다",
+          data: null,
+        },
+        { status: 401 },
       );
     }
 
@@ -31,8 +42,12 @@ export async function POST(req: Request) {
     const decodedUser = tokenCheck.decoded as any;
     if (decodedUser?.role !== "admin") {
       return Response.json(
-        { result: false, message: "접근이 거부되었습니다 (관리자 전용)", data: null },
-        { status: 403 }
+        {
+          result: false,
+          message: "접근이 거부되었습니다 (관리자 전용)",
+          data: null,
+        },
+        { status: 403 },
       );
     }
 
@@ -43,34 +58,37 @@ export async function POST(req: Request) {
     if (!representativeEmail || !emailRegex.test(representativeEmail)) {
       return Response.json(
         { result: false, message: "유효하지 않은 이메일입니다", data: null },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     await pool.query(
-      `INSERT INTO footer_info (id, snsUrl, githubUrl, representativeEmail) 
+      `INSERT INTO site_setting (id, instagramUrl, githubUrl, representativeEmail) 
        VALUES (1, ?, ?, ?) 
        ON DUPLICATE KEY UPDATE 
-       snsUrl = VALUES(snsUrl), 
+       instagramUrl = VALUES(instagramUrl), 
        githubUrl = VALUES(githubUrl), 
        representativeEmail = VALUES(representativeEmail)`,
-      [snsUrl, githubUrl, representativeEmail]
+      [snsUrl, githubUrl, representativeEmail],
     );
 
     return Response.json(
-      { 
-        result: true, 
-        message: "데이터 삽입 완료", 
-        data: { snsUrl, githubUrl, representativeEmail } 
-      }, 
-      { status: 200 }
+      {
+        result: true,
+        message: "데이터 삽입 완료",
+        data: { snsUrl, githubUrl, representativeEmail },
+      },
+      { status: 200 },
     );
-
   } catch (error: any) {
     console.error("푸터 데이터 삽입 에러:", error);
     return Response.json(
-      { result: false, message: "서버 내부 오류가 발생했습니다.", data: null }, 
-      { status: 500 }
+      {
+        result: false,
+        message: "서버 내부 오류가 발생했습니다." + error,
+        data: null,
+      },
+      { status: 500 },
     );
   }
 }
