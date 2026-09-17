@@ -1,5 +1,5 @@
-import pool from "../../lib/db_test";
-import { verifyAccessToken } from "../../utils/jwt";
+import pool from "../../../lib/db_test";
+import { verifyAccessToken, generateAccessToken } from "../../../utils/jwt";
 import { randomUUID } from "crypto";
 import fs from "fs/promises";
 import path from "path";
@@ -12,8 +12,15 @@ export async function PATCH(req: Request) {
 
   try {
     // 1. Authorization 헤더 확인
-    const authorization = req.headers.get("Authorization");
-
+    //const authorization = req.headers.get("Authorization");
+    const authorization =
+      "Bearer " +
+      generateAccessToken({
+        id: "1",
+        email: "test@gmail.com",
+        name: "testname",
+        role: "admin",
+      });
     if (!authorization) {
       return Response.json(
         {

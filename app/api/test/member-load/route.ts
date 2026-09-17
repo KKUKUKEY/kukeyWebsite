@@ -1,18 +1,17 @@
 import pool from "../../../lib/db_test";
 import { verifyAccessToken, generateAccessToken } from "../../../utils/jwt";
 
-export async function POST(req: Request) {
+export async function GET(req: Request) {
   try {
+    // 1. Authorization 헤더 확인
     //const authorization = req.headers.get("Authorization");
-    const body = await req.json();
-    const { email, targetRole } = body;
     const authorization =
       "Bearer " +
       generateAccessToken({
         id: "1",
         email: "test@gmail.com",
         name: "testname",
-        role: "admin",
+        role: "user",
       });
     if (!authorization) {
       return Response.json(
@@ -25,6 +24,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // 2. Bearer 토큰 추출 및 검증
     const [scheme, token] = authorization.split(" ");
 
     if (scheme !== "Bearer" || !token) {
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // 3. 관리자 권한 확인
     const decoded = verification.decoded as {
       role?: string;
     };
@@ -59,30 +60,26 @@ export async function POST(req: Request) {
       return Response.json(
         {
           result: false,
-          message: "관리자만 회원 정보를 수정할 수 있습니다.",
+          message: "관리자만 회원 목록을 조회할 수 있습니다.",
           data: null,
         },
         { status: 403 },
       );
     }
 
-    await pool.query("UPDATE member SET role = ? WHERE email = ?", [
-      targetRole,
-      email,
-    ]);
+    // 4. 회원 목록 조회
+    const [rows] = await pool.query("SELECT name, email, role FROM member");
 
     return Response.json(
       {
         result: true,
-        message: "권한 변경 성공",
-        data: {
-          newRole: targetRole,
-        },
+        message: "데이터 로드 성공",
+        data: rows,
       },
       { status: 200 },
     );
   } catch (error: any) {
-    console.error("access-control API 에러:", error);
+    console.error("member-load API 에러:", error);
 
     return Response.json(
       {
