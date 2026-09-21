@@ -41,6 +41,21 @@ export async function PATCH(req: Request) {
       );
     }
 
+    const decoded = verification.decoded as {
+      role?: string;
+    };
+
+    if (decoded.role !== "admin") {
+      return Response.json(
+        {
+          result: false,
+          message: "관리자만 메인 페이지 정보를 수정할 수 있습니다.",
+          data: null,
+        },
+        { status: 403 }
+      );
+    }
+
     const contentType = req.headers.get("Content-Type");
 
     if (contentType !== "multipart/form-data") {
