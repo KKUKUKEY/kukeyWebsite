@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     }
 
     // 4. 유효한 역할(role)인지 확인 (미승인 상태 등 차단)
-    if (!user.role || user.role === "unapproved") {
+    if (!user.role || user.role === "unapproved") {//수정(unapproved)
       return Response.json(
         { result: false, message: "유효하지 않은 역할입니다", data: null },
         { status: 403 }
