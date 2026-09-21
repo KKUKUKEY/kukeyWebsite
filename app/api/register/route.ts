@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
-import pool from "../../lib/db";
+import pool from "../../lib/db_test";
 
 interface MemberRow extends RowDataPacket {
   email: string;
