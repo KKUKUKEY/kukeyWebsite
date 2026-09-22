@@ -1,11 +1,22 @@
-import pool from "../../lib/db";
-import { verifyAccessToken } from "../../utils/jwt";
+import pool from "../../../lib/db";
+import { verifyAccessToken, generateAccessToken } from "../../../utils/jwt";
 import path from "path";
 import fs from "fs/promises";
+type MemberIntroduce = {
+  name: string;
+  introduce: string;
+};
 export async function PATCH(req: Request) {
   let savedFilePath: string | null = null;
   try {
-    const authorization = req.headers.get("Authorization");
+    const authorization =
+      "Bearer " +
+      generateAccessToken({
+        id: "1",
+        email: "test@gmail.com",
+        name: "testname",
+        role: "admin",
+      });
     if (!authorization) {
       return Response.json(
         {
