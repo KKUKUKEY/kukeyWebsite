@@ -1,4 +1,4 @@
-import pool from "../../../lib/db";
+import pool from "../../../lib/db_test";
 import { verifyAccessToken, generateAccessToken } from "../../../utils/jwt";
 import path from "path";
 import fs from "fs/promises";
@@ -27,7 +27,6 @@ export async function PATCH(req: Request) {
         { status: 401 },
       );
     }
-
     const [scheme, token] = authorization.split(" ");
 
     if (scheme !== "Bearer" || !token) {
