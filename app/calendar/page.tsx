@@ -18,7 +18,7 @@ interface CalendarEvent {
 }
 
 export default function CalendarPage() {
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [events] = useState<CalendarEvent[]>([]);
 
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
@@ -26,7 +26,9 @@ export default function CalendarPage() {
 
   const [showInsertModal, setShowInsertModal] = useState(false);
 
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin] = useState(
+    () => typeof window !== "undefined" && localStorage.getItem("role") === "admin",
+  );
 
   const [newEvent, setNewEvent] = useState<CalendarEvent>({
     title: "",
@@ -48,8 +50,6 @@ export default function CalendarPage() {
   };
 
   useEffect(() => {
-    setIsAdmin(localStorage.getItem("role") === "admin");
-
     loadCalendar();
   }, []);
 
