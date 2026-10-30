@@ -3,13 +3,12 @@
 import bcrypt from "bcryptjs";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "../../lib/db_test";
-
+import { generateAccessToken } from "@/app/utils/jwt";
 interface MemberRow extends RowDataPacket {
   email: string;
 }
 
 // ERD 기준: role은 admin/member (email이 PK라서 별도 id 컬럼 없음)
-const VALID_ROLES = ["admin", "member"];
 
 // ⚠️ TODO: "인증되지 않은 이메일" 조건이 정확히 뭔지 확정되면 이 배열/로직을 채워주세요.
 // 지금은 "학교 이메일 도메인이 아니면 거부"로 임시 구현해뒀습니다.
@@ -29,26 +28,15 @@ export async function POST(req: Request) {
   try {
     // 1. 요청 바디 파싱
     const body = await req.json();
-    const { email, pw, role, name } = body;
+    const { email, pw, name } = body;
 
     // 2. 필수값 검증
     // ⚠️ member 테이블의 name 컬럼이 NOT NULL이라 회원가입 시 name도 필수로 받습니다.
-    if (!email || !pw || !role || !name) {
+    if (!email || !pw || !name) {
       return Response.json(
         {
           result: false,
-          message: "email, pw, role, name은 필수입니다",
-          data: null,
-        },
-        { status: 400 },
-      );
-    }
-
-    if (!VALID_ROLES.includes(role)) {
-      return Response.json(
-        {
-          result: false,
-          message: "role은 admin 또는 member만 가능합니다",
+          message: "email, pw, name은 필수입니다",
           data: null,
         },
         { status: 400 },
@@ -93,18 +81,23 @@ export async function POST(req: Request) {
     // 6. 회원 등록
     await pool.query<ResultSetHeader>(
       "INSERT INTO member (email, password, role, name) VALUES (?, ?, ?, ?)",
-      [email, hashedPassword, role, name],
+      [email, hashedPassword, "member", name],
     );
 
     // 7. 회원가입 성공 시 로그인 수행
     // (지금은 세션/토큰 없이 바로 성공 응답만 반환. 추후 JWT 도입 시 여기서 토큰 발급해서
     //  응답에 추가하면 됨 - 예: return Response.json({ ...위 데이터, token })  )
-
+    const token = generateAccessToken({
+      id: email,
+      email: email,
+      name: name,
+      role: "member",
+    });
     return Response.json(
       {
         result: true,
         message: "회원가입 성공",
-        data: { email, role, name },
+        data: { email, name },
       },
       { status: 201 },
     );

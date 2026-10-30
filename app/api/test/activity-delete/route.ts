@@ -1,6 +1,6 @@
 import type { RowDataPacket, ResultSetHeader } from "mysql2";
-import pool from "../../../lib/db";
-import { verifyAccessToken,generateAccessToken } from "../../../utils/jwt";
+import pool from "../../../lib/db_test";
+import { verifyAccessToken, generateAccessToken } from "../../../utils/jwt";
 
 interface ActivityRow extends RowDataPacket {
   writerId: number;
@@ -14,20 +14,20 @@ export async function PATCH(req: Request) {
     // 1. Authorization 헤더 확인
     //const authHeader = req.headers.get("authorization");
     const authHeader =
-          "Bearer " +
-          generateAccessToken({
-            id: "1",
-            email: "test@gmail.com",
-            name: "testname",
-            role: "admin",
-          });
+      "Bearer " +
+      generateAccessToken({
+        id: "1",
+        email: "test@test.com",
+        name: "testname",
+        role: "admin",
+      });
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return Response.json(
         {
           result: false,
           message: "인증 토큰이 필요합니다",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -41,7 +41,7 @@ export async function PATCH(req: Request) {
           result: false,
           message: "유효하지 않은 토큰입니다",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -61,7 +61,7 @@ export async function PATCH(req: Request) {
           result: false,
           message: "id는 필수입니다",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -71,14 +71,14 @@ export async function PATCH(req: Request) {
           result: false,
           message: "유효하지 않은 이메일입니다",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // 4. 삭제할 게시물 탐색
     const [rows] = await pool.query<ActivityRow[]>(
-      "SELECT writerId FROM activity WHERE id = ?",
-      [id]
+      "SELECT id FROM activity WHERE id = ?",
+      [id],
     );
 
     if (rows.length === 0) {
@@ -87,7 +87,7 @@ export async function PATCH(req: Request) {
           result: false,
           message: "존재하지 않는 게시물입니다",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -104,14 +104,14 @@ export async function PATCH(req: Request) {
           result: false,
           message: "게시물 작성자 또는 관리자만 삭제할 수 있습니다",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // 6. 게시물 삭제
     const [result] = await pool.query<ResultSetHeader>(
       "DELETE FROM activity WHERE id = ?",
-      [id]
+      [id],
     );
 
     if (result.affectedRows === 0) {
@@ -120,7 +120,7 @@ export async function PATCH(req: Request) {
           result: false,
           message: "게시물 삭제 실패",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -129,7 +129,6 @@ export async function PATCH(req: Request) {
       result: true,
       message: "게시물 삭제 완료",
     });
-
   } catch (error: any) {
     console.error("activity-delete API 에러:", error);
 
@@ -138,7 +137,7 @@ export async function PATCH(req: Request) {
         result: false,
         message: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
