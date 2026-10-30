@@ -27,7 +27,7 @@ export async function POST(req: Request) {
         name: "testname",
         role: "admin",
       });
-    if (!authorization && !authorization.startsWith("Bearer ")) {
+    if (!authorization || !authorization.startsWith("Bearer ")) {
       return Response.json(
         { result: false, message: "권한이 없습니다 (토큰 없음)", data: null },
         { status: 401 },

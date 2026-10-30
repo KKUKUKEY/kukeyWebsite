@@ -1,5 +1,6 @@
 // 데이터베이스 위임 (테스트 DB로 통일)
-import pool from "../../lib/db_test";
+import { generateAccessToken, verifyAccessToken } from "@/app/utils/jwt";
+import pool from "../../../lib/db_test";
 
 interface ActivityRequest {
   email: string;
@@ -18,20 +19,56 @@ interface ActivityRequest {
 export async function POST(req: Request) {
   try {
     const body: ActivityRequest = await req.json();
-
+    const authorization = req.headers.get("authorization");
+    if (!authorization || !authorization.startsWith("Bearer ")) {
+      return Response.json(
+        { result: false, message: "권한이 없습니다 (토큰 없음)", data: null },
+        { status: 401 },
+      );
+    }
+    const token = authorization.split(" ")[1];
+    const tokenCheck = verifyAccessToken(token);
+    if (!tokenCheck.result) {
+      return Response.json(
+        {
+          result: false,
+          message: "유효하지 않거나 만료된 토큰입니다",
+          data: null,
+        },
+        { status: 401 },
+      );
+    }
+    const decodedUser = tokenCheck.decoded as any;
+    if (decodedUser?.role !== "admin" && decodedUser?.role !== "member") {
+      return Response.json(
+        {
+          result: false,
+          message: "접근이 거부되었습니다 (관리자 전용)",
+          data: null,
+        },
+        { status: 403 },
+      );
+    }
     const {
       email,
       title,
       status,
       techStacks,
-      leader,
-      createdAt,
       startDate,
       endDate,
       maxParticipants,
       text,
     } = body;
-
+    if (decodedUser?.sub != email) {
+      return Response.json(
+        {
+          result: false,
+          message: "접근이 거부되었습니다 (계정 정보가 일치하지 않음)",
+          data: null,
+        },
+        { status: 403 },
+      );
+    }
     const current_participants = body.current_participants || 1;
 
     if (!email || !title) {
@@ -44,18 +81,16 @@ export async function POST(req: Request) {
     // 1. activity 테이블에 게시물 메인 정보 저장
     const [result]: any = await pool.query(
       `INSERT INTO activity 
-      (email, title, status, createdAt, startDate, endDate, maxParticipants, currentParticipants,leader,text) 
-      VALUES (?, ?, ?, NOW(), ?, ?, ?, ?,?,?)`,
+      (leaderEmail, title, status, createdAt, startDate, endDate, maxParticipants, currentParticipants,text) 
+      VALUES (?, ?, ?, NOW(), ?,  ?, ?,?,?)`,
       [
         email,
         title,
         status,
-        createdAt,
         startDate,
         endDate,
         maxParticipants,
         current_participants,
-        leader,
         text,
       ],
     );
