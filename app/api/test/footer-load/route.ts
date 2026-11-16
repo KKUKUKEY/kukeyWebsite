@@ -1,14 +1,14 @@
 import pool from "../../../lib/db_test";
 import type { RowDataPacket } from "mysql2";
 interface SiteSettingRow extends RowDataPacket{
-  instagramUrl: string | null;
+  snsUrl: string | null;
   githubUrl: string | null;
   representativeEmail: string | null;
 }
 export async function GET() {
   try {
     const [rows] = await pool.query<SiteSettingRow[]>(
-      "SELECT instagramUrl, githubUrl, representativeEmail FROM site_setting",
+      "SELECT snsUrl, githubUrl, representativeEmail FROM site_setting",
     );
     return Response.json(
       {
