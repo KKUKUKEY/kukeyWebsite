@@ -1,7 +1,7 @@
 //import jwt from "jsonwebtoken";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "../../lib/db_test";
-import { generateAccessToken, verifyAccessToken } from "@/app/utils/jwt";
+import { verifyAccessToken } from "@/app/utils/jwt";
 
 const VALID_STATUSES = ["RECRUITING", "COMPLETED", "DONE"];
 
@@ -14,15 +14,7 @@ interface ActivityRow extends RowDataPacket {
 export async function PATCH(req: Request) {
   try {
     // 1. Authorization 헤더 검증 ("Bearer <token>")
-    //const authHeader = req.headers.get("authorization");
-    const authHeader =
-      "Bearer " +
-      generateAccessToken({
-        id: "test@gmail.com",
-        email: "test@gmail.com",
-        name: "testname",
-        role: "admin",
-      });
+    const authHeader = req.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return Response.json(
         { result: false, message: "인증 토큰이 필요합니다" },

@@ -1,5 +1,5 @@
 // 데이터베이스 위임 (테스트 DB로 통일)
-import { generateAccessToken, verifyAccessToken } from "@/app/utils/jwt";
+import { verifyAccessToken } from "@/app/utils/jwt";
 import pool from "../../lib/db";
 
 interface ActivityRequest {
@@ -19,14 +19,7 @@ interface ActivityRequest {
 export async function POST(req: Request) {
   try {
     const body: ActivityRequest = await req.json();
-    const authorization =
-      "Bearer " +
-      generateAccessToken({
-        id: "test@gmail.com",
-        email: "test@gmail.com",
-        name: "testname",
-        role: "admin",
-      });
+    const authorization = req.headers.get("authorization");
     if (!authorization || !authorization.startsWith("Bearer ")) {
       return Response.json(
         { result: false, message: "권한이 없습니다 (토큰 없음)", data: null },
