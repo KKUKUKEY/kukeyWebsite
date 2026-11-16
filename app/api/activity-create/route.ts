@@ -1,6 +1,6 @@
 // 데이터베이스 위임 (테스트 DB로 통일)
 import { generateAccessToken, verifyAccessToken } from "@/app/utils/jwt";
-import pool from "../../../lib/db_test";
+import pool from "../../lib/db";
 
 interface ActivityRequest {
   email: string;

@@ -2,7 +2,7 @@ import { log } from "console";
 import jwt from "jsonwebtoken";
 
 interface UserPayload {
-  id: string; // DB 식별 ID (sub로 매핑)
+  id: string; // DB 식별 ID
   email: string; // 이메일
   name: string; // 이름
   role: string; // 역할 (admin, member 등)

@@ -1,11 +1,12 @@
-import jwt from "jsonwebtoken";
+//import jwt from "jsonwebtoken";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
-import pool from "../../lib/db";
+import pool from "../../lib/db_test";
+import { generateAccessToken, verifyAccessToken } from "@/app/utils/jwt";
 
 const VALID_STATUSES = ["RECRUITING", "COMPLETED", "DONE"];
 
 interface ActivityRow extends RowDataPacket {
-  writerId: number;
+  writerId: string;
 }
 
 // PATCH /api/activity-update
@@ -13,7 +14,15 @@ interface ActivityRow extends RowDataPacket {
 export async function PATCH(req: Request) {
   try {
     // 1. Authorization 헤더 검증 ("Bearer <token>")
-    const authHeader = req.headers.get("authorization");
+    //const authHeader = req.headers.get("authorization");
+    const authHeader =
+      "Bearer " +
+      generateAccessToken({
+        id: "test@gmail.com",
+        email: "test@gmail.com",
+        name: "testname",
+        role: "admin",
+      });
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return Response.json(
         { result: false, message: "인증 토큰이 필요합니다" },
@@ -22,12 +31,17 @@ export async function PATCH(req: Request) {
     }
 
     const token = authHeader.slice("Bearer ".length);
-    let memberId: number;
+    let memberId: string;
     try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET as string) as {
-        id: number;
-      };
-      memberId = payload.id;
+      const payload = verifyAccessToken(token);
+      const subject = payload.decoded?.sub;
+      if (!payload.result || typeof subject !== "string") {
+        return Response.json(
+          { result: false, message: "유효하지 않은 토큰입니다" },
+          { status: 401 },
+        );
+      }
+      memberId = subject;
     } catch {
       return Response.json(
         { result: false, message: "유효하지 않은 토큰입니다" },
@@ -67,7 +81,7 @@ export async function PATCH(req: Request) {
 
     // 3. 게시물 탐색
     const [rows] = await pool.query<ActivityRow[]>(
-      "SELECT writerId FROM activity WHERE id = ?",
+      "SELECT leaderEmail FROM activity WHERE id = ?",
       [id],
     );
 
@@ -79,7 +93,7 @@ export async function PATCH(req: Request) {
     }
 
     // 4. 작성자 본인 확인
-    if (rows[0].writerId !== memberId) {
+    if (rows[0].leaderEmail !== memberId) {
       return Response.json(
         { result: false, message: "게시물 작성자만 수정할 수 있습니다" },
         { status: 403 },
@@ -89,20 +103,22 @@ export async function PATCH(req: Request) {
     // 5. 게시물 수정
     const [result] = await pool.query<ResultSetHeader>(
       `UPDATE activity
-       SET title = ?, text = ?, status = ?, techStacks = ?, startDate = ?, endDate = ?, maxParticipants = ?
+       SET title = ?, text = ?, status = ?, startDate = ?, endDate = ?, maxParticipants = ?
        WHERE id = ?`,
-      [
-        title,
-        text,
-        status,
-        JSON.stringify(techStacks ?? []),
-        startDate,
-        endDate,
-        maxParticipants,
-        id,
-      ],
+      [title, text, status, startDate, endDate, maxParticipants, id],
     );
-
+    await pool.query<ResultSetHeader>(
+      `delete from activity_tech_stack where id=?`,
+      [id],
+    );
+    if (techStacks && techStacks.length > 0) {
+      for (const stack of techStacks) {
+        await pool.query(
+          `INSERT INTO activity_tech_stack (id, techStack) VALUES (?, ?)`,
+          [id, stack],
+        );
+      }
+    }
     if (result.affectedRows === 0) {
       return Response.json(
         { result: false, message: "데이터 수정 실패" },
