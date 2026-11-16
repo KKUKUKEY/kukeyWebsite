@@ -1,4 +1,4 @@
-import pool from "../../lib/db_test";
+import pool from "../../lib/db";
 import { verifyAccessToken } from "../../utils/jwt";
 
 export async function POST(req: Request) {
