@@ -6,7 +6,7 @@ import { generateAccessToken, verifyAccessToken } from "@/app/utils/jwt";
 const VALID_STATUSES = ["RECRUITING", "COMPLETED", "DONE"];
 
 interface ActivityRow extends RowDataPacket {
-  writerId: string;
+  leaderEmail: string;
 }
 
 // PATCH /api/activity-update

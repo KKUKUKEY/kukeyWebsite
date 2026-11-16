@@ -3,7 +3,7 @@ import pool from "../../../lib/db_test";
 import { verifyAccessToken, generateAccessToken } from "../../../utils/jwt";
 
 interface ActivityRow extends RowDataPacket {
-  writerId: number;
+  leaderEmail: string;
 }
 
 // PATCH /api/activity-delete
@@ -16,8 +16,8 @@ export async function PATCH(req: Request) {
     const authHeader =
       "Bearer " +
       generateAccessToken({
-        id: "1",
-        email: "test@test.com",
+        id: "test@gmail.com",
+        email: "test@gmail.com",
         name: "testname",
         role: "admin",
       });
@@ -53,7 +53,7 @@ export async function PATCH(req: Request) {
 
     // 3. 요청 바디 가져오기
     const body = await req.json();
-    const { id, email } = body;
+    const { id } = body;
 
     if (!id) {
       return Response.json(
@@ -65,19 +65,9 @@ export async function PATCH(req: Request) {
       );
     }
 
-    if (!email || decoded.email !== email) {
-      return Response.json(
-        {
-          result: false,
-          message: "유효하지 않은 이메일입니다",
-        },
-        { status: 400 },
-      );
-    }
-
     // 4. 삭제할 게시물 탐색
     const [rows] = await pool.query<ActivityRow[]>(
-      "SELECT id FROM activity WHERE id = ?",
+      "SELECT leaderEmail FROM activity WHERE id = ?",
       [id],
     );
 
@@ -90,15 +80,7 @@ export async function PATCH(req: Request) {
         { status: 404 },
       );
     }
-
-    // JWT의 sub가 로그인한 회원의 id
-    const memberId = Number(decoded.sub);
-
-    // 5. 작성자 또는 관리자인지 확인
-    const isWriter = rows[0].writerId === memberId;
-    const isAdmin = decoded.role === "admin";
-
-    if (!isWriter && !isAdmin) {
+    if (decoded.sub !== rows[0].leaderEmail && decoded.role !== "admin") {
       return Response.json(
         {
           result: false,
@@ -113,7 +95,6 @@ export async function PATCH(req: Request) {
       "DELETE FROM activity WHERE id = ?",
       [id],
     );
-
     if (result.affectedRows === 0) {
       return Response.json(
         {

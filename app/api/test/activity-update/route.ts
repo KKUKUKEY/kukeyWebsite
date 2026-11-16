@@ -6,7 +6,7 @@ import { generateAccessToken, verifyAccessToken } from "@/app/utils/jwt";
 const VALID_STATUSES = ["RECRUITING", "COMPLETED", "DONE"];
 
 interface ActivityRow extends RowDataPacket {
-  writerId: string;
+  leaderEmail: string;
 }
 
 // PATCH /api/activity-update
@@ -16,13 +16,13 @@ export async function PATCH(req: Request) {
     // 1. Authorization 헤더 검증 ("Bearer <token>")
     //const authHeader = req.headers.get("authorization");
     const authHeader =
-          "Bearer " +
-          generateAccessToken({
-            id: "test@gmail.com",
-            email: "test@gmail.com",
-            name: "testname",
-            role: "admin",
-          });
+      "Bearer " +
+      generateAccessToken({
+        id: "test@gmail.com",
+        email: "test@gmail.com",
+        name: "testname",
+        role: "admin",
+      });
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return Response.json(
         { result: false, message: "인증 토큰이 필요합니다" },
@@ -105,17 +105,12 @@ export async function PATCH(req: Request) {
       `UPDATE activity
        SET title = ?, text = ?, status = ?, startDate = ?, endDate = ?, maxParticipants = ?
        WHERE id = ?`,
-      [
-        title,
-        text,
-        status,
-        startDate,
-        endDate,
-        maxParticipants,
-        id,
-      ],
+      [title, text, status, startDate, endDate, maxParticipants, id],
     );
-    await pool.query<ResultSetHeader>(`delete from activity_tech_stack where id=?`,[id]);
+    await pool.query<ResultSetHeader>(
+      `delete from activity_tech_stack where id=?`,
+      [id],
+    );
     if (techStacks && techStacks.length > 0) {
       for (const stack of techStacks) {
         await pool.query(

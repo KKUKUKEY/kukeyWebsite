@@ -57,7 +57,6 @@ export async function POST(req: Request) {
       );
     }
     const {
-      email,
       title,
       status,
       techStacks,
@@ -66,21 +65,11 @@ export async function POST(req: Request) {
       maxParticipants,
       text,
     } = body;
-    if (decodedUser?.sub != email) {
-      return Response.json(
-        {
-          result: false,
-          message: "접근이 거부되었습니다 (계정 정보가 일치하지 않음)",
-          data: null,
-        },
-        { status: 403 },
-      );
-    }
     const current_participants = body.current_participants || 1;
 
-    if (!email || !title) {
+    if (!title) {
       return Response.json(
-        { success: false, message: "작성자 이메일과 제목은 필수입니다." },
+        { success: false, message: "제목은 필수입니다." },
         { status: 400 },
       );
     }
@@ -91,7 +80,7 @@ export async function POST(req: Request) {
       (leaderEmail, title, status, createdAt, startDate, endDate, maxParticipants, currentParticipants,text) 
       VALUES (?, ?, ?, NOW(), ?,  ?, ?,?,?)`,
       [
-        email,
+        decodedUser.sub,
         title,
         status,
         startDate,
