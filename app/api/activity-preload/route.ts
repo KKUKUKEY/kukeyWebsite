@@ -1,4 +1,4 @@
-import pool from "../../lib/db_test";
+import pool from "../../lib/db";
 
 export async function GET(req: Request) {
   try {
@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     if (isNaN(page) || page < 1) {
       return Response.json(
         { result: false, message: "존재하지 않는 페이지", data: null },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
     // 3. DB에서 전체 게시물 수 조회
     const [countResult]: any = await pool.query(
-      "SELECT COUNT(*) as total FROM activity"
+      "SELECT COUNT(*) as total FROM activity",
     );
     const totalCount = countResult[0].total;
 
@@ -29,12 +29,12 @@ export async function GET(req: Request) {
     if (totalCount > 0 && offset >= totalCount) {
       return Response.json(
         { result: false, message: "존재하지 않는 페이지", data: null },
-        { status: 404 }
+        { status: 404 },
       );
     } else if (totalCount === 0 && page > 1) {
       return Response.json(
         { result: false, message: "존재하지 않는 페이지", data: null },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -56,24 +56,23 @@ export async function GET(req: Request) {
        GROUP BY a.id
        ORDER BY a.createdAt DESC 
        LIMIT ? OFFSET ?`,
-      [pageSize, offset]
+      [pageSize, offset],
     );
 
     // 5. 성공 응답 반환
     return Response.json(
-      { 
-        result: true, 
-        message: "데이터 로드 성공", 
-        data: rows 
+      {
+        result: true,
+        message: "데이터 로드 성공",
+        data: rows,
       },
-      { status: 200 }
+      { status: 200 },
     );
-
   } catch (error) {
     console.error("활동 게시물 로드 에러:", error);
     return Response.json(
       { result: false, message: "데이터베이스 오류", data: null },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
