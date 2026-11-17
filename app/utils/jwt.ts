@@ -1,11 +1,17 @@
 import { log } from "console";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 
 interface UserPayload {
   id: string; // DB 식별 ID
   email: string; // 이메일
   name: string; // 이름
   role: string; // 역할 (admin, member 등)
+}
+export interface DecodedUserPayload extends JwtPayload {
+  sub: string;
+  email: string;
+  name: string;
+  role: string;
 }
 //토큰 생성
 export function generateAccessToken(user: UserPayload): string {
@@ -34,7 +40,10 @@ export function verifyAccessToken(token: string) {
   const JWT_SECRET = process.env.JWT_SECRET;
   try {
     // 서명이 맞고 만료가 안 됐다면 해독된 payload를 반환
-    const decoded = jwt.verify(token, JWT_SECRET as string);
+    const decoded = jwt.verify(
+      token,
+      JWT_SECRET as string,
+    ) as DecodedUserPayload;
     return { result: true, decoded };
   } catch (error) {
     // 만료되었거나 누군가 임의로 조작한 토큰인 경우

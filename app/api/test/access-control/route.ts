@@ -1,3 +1,4 @@
+import { RowDataPacket } from "mysql2";
 import pool from "../../../lib/db_test";
 import { verifyAccessToken, generateAccessToken } from "../../../utils/jwt";
 
@@ -5,7 +6,27 @@ export async function POST(req: Request) {
   try {
     //const authorization = req.headers.get("Authorization");
     const body = await req.json();
-    const { email, targetRole } = body;
+    const { targetEmail, targetRole } = body;
+    const targetRoleRange = ["admin", "member", "unapproved"];
+    if (!targetRole || !targetRoleRange.includes(targetRole)) {
+      return Response.json(
+        {
+          success: false,
+          message: `유효하지 않은 role입니다. 허용된 값: ${targetRoleRange.join(", ")}`,
+        },
+        { status: 400 },
+      );
+    }
+    const [users] = await pool.query<RowDataPacket[]>(
+      `select email from member where email=?`,
+      [targetEmail],
+    );
+    if (users.length === 0) {
+      return Response.json(
+        { success: false, message: "존재하지 않는 사용자입니다." },
+        { status: 404 },
+      );
+    }
     const authorization =
       "Bearer " +
       generateAccessToken({
@@ -40,7 +61,7 @@ export async function POST(req: Request) {
 
     const verification = verifyAccessToken(token);
 
-    if (!verification.result) {
+    if (!verification.result || !verification.decoded) {
       return Response.json(
         {
           result: false,
@@ -51,9 +72,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const decoded = verification.decoded as {
-      role?: string;
-    };
+    const decoded = verification.decoded;
 
     if (decoded.role !== "admin") {
       return Response.json(
@@ -65,10 +84,9 @@ export async function POST(req: Request) {
         { status: 403 },
       );
     }
-
     await pool.query("UPDATE member SET role = ? WHERE email = ?", [
       targetRole,
-      email,
+      targetEmail,
     ]);
 
     return Response.json(
