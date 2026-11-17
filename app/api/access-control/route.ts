@@ -1,12 +1,32 @@
+import { RowDataPacket } from "mysql2";
 import pool from "../../lib/db";
-import {verifyAccessToken} from "../../utils/jwt";
+import { verifyAccessToken } from "../../utils/jwt";
 
 export async function POST(req: Request) {
   try {
     const authorization = req.headers.get("Authorization");
     const body = await req.json();
-    const { email, targetRole } = body;
-
+    const { targetEmail, targetRole } = body;
+    const targetRoleRange = ["admin", "member", "unapproved"];
+    if (!targetRole || !targetRoleRange.includes(targetRole)) {
+      return Response.json(
+        {
+          success: false,
+          message: `유효하지 않은 role입니다. 허용된 값: ${targetRoleRange.join(", ")}`,
+        },
+        { status: 400 },
+      );
+    }
+    const [users] = await pool.query<RowDataPacket[]>(
+      `select email from member where email=?`,
+      [targetEmail],
+    );
+    if (users.length === 0) {
+      return Response.json(
+        { success: false, message: "존재하지 않는 사용자입니다." },
+        { status: 404 },
+      );
+    }
     if (!authorization) {
       return Response.json(
         {
@@ -14,7 +34,7 @@ export async function POST(req: Request) {
           message: "인증 토큰이 없습니다.",
           data: null,
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -27,26 +47,24 @@ export async function POST(req: Request) {
           message: "잘못된 인증 형식입니다.",
           data: null,
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const verification = verifyAccessToken(token);
 
-    if (!verification.result) {
+    if (!verification.result || !verification.decoded) {
       return Response.json(
         {
           result: false,
           message: "유효하지 않은 인증 토큰입니다.",
           data: null,
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-    const decoded = verification.decoded as {
-      role?: string;
-    };
+    const decoded = verification.decoded;
 
     if (decoded.role !== "admin") {
       return Response.json(
@@ -55,11 +73,13 @@ export async function POST(req: Request) {
           message: "관리자만 회원 정보를 수정할 수 있습니다.",
           data: null,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
-
-    await pool.query("UPDATE member SET role = ? WHERE email = ?", [targetRole, email]);
+    await pool.query("UPDATE member SET role = ? WHERE email = ?", [
+      targetRole,
+      targetEmail,
+    ]);
 
     return Response.json(
       {
@@ -67,7 +87,7 @@ export async function POST(req: Request) {
         message: "권한 변경 성공",
         data: {
           newRole: targetRole,
-        }
+        },
       },
       { status: 200 },
     );
